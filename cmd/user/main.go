@@ -1,9 +1,9 @@
 package main
 
 import (
+	"douyin/pkg/initialize"
 	"net"
 
-	"douyin/dal"
 	"douyin/kitex_gen/user/userservice"
 	"douyin/pkg/constant"
 	"douyin/pkg/mw"
@@ -18,7 +18,9 @@ import (
 )
 
 func Init() {
-	dal.Init()
+	initialize.Viper()
+	initialize.MySQL()
+	initialize.Redis()
 	// klog init
 	klog.SetLogger(kitexlogrus.NewLogger())
 	klog.SetLevel(klog.LevelInfo)

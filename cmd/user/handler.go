@@ -2,71 +2,48 @@ package main
 
 import (
 	"context"
+
 	"douyin/cmd/user/service"
-	"douyin/dal/pack"
 	"douyin/kitex_gen/user"
 	"douyin/pkg/errno"
+	"douyin/pkg/util"
 )
 
 // UserServiceImpl implements the last service interface defined in the IDL.
 type UserServiceImpl struct{}
 
 // Register implements the UserServiceImpl interface.
-func (s *UserServiceImpl) Register(ctx context.Context, req *user.DouyinUserRegisterRequest) (resp *user.DouyinUserRegisterResponse, err error) {
-	resp = new(user.DouyinUserRegisterResponse)
-
-	if err = req.IsValid(); err != nil {
-		resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(errno.ParamErr)
-		return resp, nil
+func (s *UserServiceImpl) Register(ctx context.Context, req *user.DouyinUserRegisterRequest) (*user.DouyinUserRegisterResponse, error) {
+	if err := req.IsValid(); err != nil {
+		errNo := errno.UserRequestParameterError
+		errNo.ErrMsg = err.Error()
+		return nil, errNo
 	}
-
-	userID, err := service.NewRegisterService(ctx).Register(req)
-	if err != nil {
-		resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(err)
-		return resp, nil
-	}
-
-	resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(errno.Success)
-	resp.UserId = userID
-	return resp, nil
+	return service.NewUserService(ctx).Register(req.Username, req.Password)
 }
 
 // Login implements the UserServiceImpl interface.
-func (s *UserServiceImpl) Login(ctx context.Context, req *user.DouyinUserLoginRequest) (resp *user.DouyinUserLoginResponse, err error) {
-	resp = new(user.DouyinUserLoginResponse)
-
-	if err = req.IsValid(); err != nil {
-		resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(errno.ParamErr)
-		return resp, nil
+func (s *UserServiceImpl) Login(ctx context.Context, req *user.DouyinUserLoginRequest) (*user.DouyinUserLoginResponse, error) {
+	if err := req.IsValid(); err != nil {
+		errNo := errno.UserRequestParameterError
+		errNo.ErrMsg = err.Error()
+		return nil, errNo
 	}
-
-	userID, err := service.NewLoginService(ctx).Login(req)
-	if err != nil {
-		resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(err)
-		return resp, nil
-	}
-
-	resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(errno.Success)
-	resp.UserId = userID
-	return resp, nil
+	return service.NewUserService(ctx).Login(req.Username, req.Password)
 }
 
 // GetUserInfo implements the UserServiceImpl interface.
-func (s *UserServiceImpl) GetUserInfo(ctx context.Context, req *user.DouyinUserRequest) (resp *user.DouyinUserResponse, err error) {
-	resp = new(user.DouyinUserResponse)
-
-	if err = req.IsValid(); err != nil {
-		resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(errno.ParamErr)
-		return resp, nil
+func (s *UserServiceImpl) GetUserInfo(ctx context.Context, req *user.DouyinUserRequest) (*user.DouyinUserResponse, error) {
+	if err := req.IsValid(); err != nil {
+		errNo := errno.UserRequestParameterError
+		errNo.ErrMsg = err.Error()
+		return nil, errNo
 	}
 
-	userInfo, err := service.NewInfoService(ctx).GetUserInfo(req)
+	claim, err := util.ParseToken(req.Token)
 	if err != nil {
-		resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(err)
-		return resp, nil
+		return nil, err
 	}
 
-	resp.StatusCode, resp.StatusMsg = pack.BuildCodeAndMsg(errno.Success)
-	resp.User = userInfo
-	return resp, nil
+	return service.NewUserService(ctx).GetUserInfo(claim.UserID, uint64(req.UserId))
 }
