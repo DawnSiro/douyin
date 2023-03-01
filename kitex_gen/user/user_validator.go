@@ -34,16 +34,9 @@ func (p *DouyinUserRegisterRequest) IsValid() error {
 	if len(p.Password) > int(32) {
 		return fmt.Errorf("field Password max_len rule failed, current value: %d", len(p.Password))
 	}
-	_src := "[0-9A-Za-z]+"
-	if ok, _ := regexp.MatchString(_src, p.Password); !ok {
-		return fmt.Errorf("field Password pattern rule failed, current value: %v", p.Password)
-	}
 	return nil
 }
 func (p *DouyinUserRegisterResponse) IsValid() error {
-	if p.UserId <= int64(0) {
-		return fmt.Errorf("field UserId gt rule failed, current value: %v", p.UserId)
-	}
 	return nil
 }
 func (p *DouyinUserLoginRequest) IsValid() error {
@@ -62,9 +55,6 @@ func (p *DouyinUserLoginRequest) IsValid() error {
 	return nil
 }
 func (p *DouyinUserLoginResponse) IsValid() error {
-	if p.UserId <= int64(0) {
-		return fmt.Errorf("field UserId gt rule failed, current value: %v", p.UserId)
-	}
 	return nil
 }
 func (p *DouyinUserRequest) IsValid() error {
@@ -81,19 +71,12 @@ func (p *DouyinUserResponse) IsValid() error {
 	}
 	return nil
 }
+func (p *UserInfo) IsValid() error {
+	return nil
+}
 func (p *User) IsValid() error {
-	if p.Id <= int64(0) {
-		return fmt.Errorf("field Id gt rule failed, current value: %v", p.Id)
-	}
-	if p.FollowCount != nil {
-		if *p.FollowCount <= int64(0) {
-			return fmt.Errorf("field FollowCount gt rule failed, current value: %v", *p.FollowCount)
-		}
-	}
-	if p.FollowerCount != nil {
-		if *p.FollowerCount <= int64(0) {
-			return fmt.Errorf("field FollowerCount gt rule failed, current value: %v", *p.FollowerCount)
-		}
-	}
+	return nil
+}
+func (p *FriendUser) IsValid() error {
 	return nil
 }

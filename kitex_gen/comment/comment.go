@@ -3,15 +3,265 @@
 package comment
 
 import (
+	"context"
+	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"github.com/apache/thrift/lib/go/thrift"
 	"strings"
 )
 
+type ErrCode int64
+
+const (
+	ErrCode_Success                                  ErrCode = 0
+	ErrCode_Client                                   ErrCode = 10001
+	ErrCode_UserRegistration                         ErrCode = 10100
+	ErrCode_UsernameVerificationFailed               ErrCode = 10110
+	ErrCode_UsernameAlreadyExists                    ErrCode = 10111
+	ErrCode_PasswordVerificationFailed               ErrCode = 10120
+	ErrCode_PasswordLengthNotEnough                  ErrCode = 10121
+	ErrCode_PasswordStrengthNotEnough                ErrCode = 10122
+	ErrCode_UserLogin                                ErrCode = 10200
+	ErrCode_UserAccountDoesNotExist                  ErrCode = 10201
+	ErrCode_UserPassword                             ErrCode = 10210
+	ErrCode_PasswordNumberOfTimesExceeds             ErrCode = 10211
+	ErrCode_UserIdentityVerificationFailed           ErrCode = 10220
+	ErrCode_UserLoginHasExpired                      ErrCode = 10230
+	ErrCode_AccessPermission                         ErrCode = 10300
+	ErrCode_DeletePermission                         ErrCode = 10310
+	ErrCode_UserRequestParameter                     ErrCode = 10400
+	ErrCode_RepeatOperationError                     ErrCode = 10410
+	ErrCode_IllegalUserInput                         ErrCode = 10430
+	ErrCode_ContainsProhibitedSensitiveWords         ErrCode = 10431
+	ErrCode_UserUploadFile                           ErrCode = 10500
+	ErrCode_FileTypeUploadedNotMatch                 ErrCode = 10501
+	ErrCode_VideoUploadedTooLarge                    ErrCode = 10504
+	ErrCode_Service                                  ErrCode = 20000
+	ErrCode_SystemExecution                          ErrCode = 20001
+	ErrCode_SystemExecutionTimeout                   ErrCode = 20100
+	ErrCode_SystemDisasterToleranceFunctionTriggered ErrCode = 20200
+	ErrCode_SystemResource                           ErrCode = 20300
+	ErrCode_CallingThirdPartyService                 ErrCode = 30001
+	ErrCode_MiddlewareService                        ErrCode = 30100
+	ErrCode_RPCService                               ErrCode = 30110
+	ErrCode_RPCServiceNotFind                        ErrCode = 30111
+	ErrCode_RPCServiceNotRegistered                  ErrCode = 30112
+	ErrCode_InterfaceNotExist                        ErrCode = 30113
+	ErrCode_CacheService                             ErrCode = 30120
+	ErrCode_KeyLengthExceedsLimit                    ErrCode = 30121
+	ErrCode_ValueLengthExceedsLimit                  ErrCode = 30122
+	ErrCode_StorageCapacityFull                      ErrCode = 30123
+	ErrCode_UnsupportedDataFormat                    ErrCode = 30124
+	ErrCode_DatabaseService                          ErrCode = 30200
+	ErrCode_TableDoesNotExist                        ErrCode = 30211
+	ErrCode_ColumnDoesNotExist                       ErrCode = 30212
+	ErrCode_DatabaseDeadlock                         ErrCode = 30231
+)
+
+func (p ErrCode) String() string {
+	switch p {
+	case ErrCode_Success:
+		return "Success"
+	case ErrCode_Client:
+		return "Client"
+	case ErrCode_UserRegistration:
+		return "UserRegistration"
+	case ErrCode_UsernameVerificationFailed:
+		return "UsernameVerificationFailed"
+	case ErrCode_UsernameAlreadyExists:
+		return "UsernameAlreadyExists"
+	case ErrCode_PasswordVerificationFailed:
+		return "PasswordVerificationFailed"
+	case ErrCode_PasswordLengthNotEnough:
+		return "PasswordLengthNotEnough"
+	case ErrCode_PasswordStrengthNotEnough:
+		return "PasswordStrengthNotEnough"
+	case ErrCode_UserLogin:
+		return "UserLogin"
+	case ErrCode_UserAccountDoesNotExist:
+		return "UserAccountDoesNotExist"
+	case ErrCode_UserPassword:
+		return "UserPassword"
+	case ErrCode_PasswordNumberOfTimesExceeds:
+		return "PasswordNumberOfTimesExceeds"
+	case ErrCode_UserIdentityVerificationFailed:
+		return "UserIdentityVerificationFailed"
+	case ErrCode_UserLoginHasExpired:
+		return "UserLoginHasExpired"
+	case ErrCode_AccessPermission:
+		return "AccessPermission"
+	case ErrCode_DeletePermission:
+		return "DeletePermission"
+	case ErrCode_UserRequestParameter:
+		return "UserRequestParameter"
+	case ErrCode_RepeatOperationError:
+		return "RepeatOperationError"
+	case ErrCode_IllegalUserInput:
+		return "IllegalUserInput"
+	case ErrCode_ContainsProhibitedSensitiveWords:
+		return "ContainsProhibitedSensitiveWords"
+	case ErrCode_UserUploadFile:
+		return "UserUploadFile"
+	case ErrCode_FileTypeUploadedNotMatch:
+		return "FileTypeUploadedNotMatch"
+	case ErrCode_VideoUploadedTooLarge:
+		return "VideoUploadedTooLarge"
+	case ErrCode_Service:
+		return "Service"
+	case ErrCode_SystemExecution:
+		return "SystemExecution"
+	case ErrCode_SystemExecutionTimeout:
+		return "SystemExecutionTimeout"
+	case ErrCode_SystemDisasterToleranceFunctionTriggered:
+		return "SystemDisasterToleranceFunctionTriggered"
+	case ErrCode_SystemResource:
+		return "SystemResource"
+	case ErrCode_CallingThirdPartyService:
+		return "CallingThirdPartyService"
+	case ErrCode_MiddlewareService:
+		return "MiddlewareService"
+	case ErrCode_RPCService:
+		return "RPCService"
+	case ErrCode_RPCServiceNotFind:
+		return "RPCServiceNotFind"
+	case ErrCode_RPCServiceNotRegistered:
+		return "RPCServiceNotRegistered"
+	case ErrCode_InterfaceNotExist:
+		return "InterfaceNotExist"
+	case ErrCode_CacheService:
+		return "CacheService"
+	case ErrCode_KeyLengthExceedsLimit:
+		return "KeyLengthExceedsLimit"
+	case ErrCode_ValueLengthExceedsLimit:
+		return "ValueLengthExceedsLimit"
+	case ErrCode_StorageCapacityFull:
+		return "StorageCapacityFull"
+	case ErrCode_UnsupportedDataFormat:
+		return "UnsupportedDataFormat"
+	case ErrCode_DatabaseService:
+		return "DatabaseService"
+	case ErrCode_TableDoesNotExist:
+		return "TableDoesNotExist"
+	case ErrCode_ColumnDoesNotExist:
+		return "ColumnDoesNotExist"
+	case ErrCode_DatabaseDeadlock:
+		return "DatabaseDeadlock"
+	}
+	return "<UNSET>"
+}
+
+func ErrCodeFromString(s string) (ErrCode, error) {
+	switch s {
+	case "Success":
+		return ErrCode_Success, nil
+	case "Client":
+		return ErrCode_Client, nil
+	case "UserRegistration":
+		return ErrCode_UserRegistration, nil
+	case "UsernameVerificationFailed":
+		return ErrCode_UsernameVerificationFailed, nil
+	case "UsernameAlreadyExists":
+		return ErrCode_UsernameAlreadyExists, nil
+	case "PasswordVerificationFailed":
+		return ErrCode_PasswordVerificationFailed, nil
+	case "PasswordLengthNotEnough":
+		return ErrCode_PasswordLengthNotEnough, nil
+	case "PasswordStrengthNotEnough":
+		return ErrCode_PasswordStrengthNotEnough, nil
+	case "UserLogin":
+		return ErrCode_UserLogin, nil
+	case "UserAccountDoesNotExist":
+		return ErrCode_UserAccountDoesNotExist, nil
+	case "UserPassword":
+		return ErrCode_UserPassword, nil
+	case "PasswordNumberOfTimesExceeds":
+		return ErrCode_PasswordNumberOfTimesExceeds, nil
+	case "UserIdentityVerificationFailed":
+		return ErrCode_UserIdentityVerificationFailed, nil
+	case "UserLoginHasExpired":
+		return ErrCode_UserLoginHasExpired, nil
+	case "AccessPermission":
+		return ErrCode_AccessPermission, nil
+	case "DeletePermission":
+		return ErrCode_DeletePermission, nil
+	case "UserRequestParameter":
+		return ErrCode_UserRequestParameter, nil
+	case "RepeatOperationError":
+		return ErrCode_RepeatOperationError, nil
+	case "IllegalUserInput":
+		return ErrCode_IllegalUserInput, nil
+	case "ContainsProhibitedSensitiveWords":
+		return ErrCode_ContainsProhibitedSensitiveWords, nil
+	case "UserUploadFile":
+		return ErrCode_UserUploadFile, nil
+	case "FileTypeUploadedNotMatch":
+		return ErrCode_FileTypeUploadedNotMatch, nil
+	case "VideoUploadedTooLarge":
+		return ErrCode_VideoUploadedTooLarge, nil
+	case "Service":
+		return ErrCode_Service, nil
+	case "SystemExecution":
+		return ErrCode_SystemExecution, nil
+	case "SystemExecutionTimeout":
+		return ErrCode_SystemExecutionTimeout, nil
+	case "SystemDisasterToleranceFunctionTriggered":
+		return ErrCode_SystemDisasterToleranceFunctionTriggered, nil
+	case "SystemResource":
+		return ErrCode_SystemResource, nil
+	case "CallingThirdPartyService":
+		return ErrCode_CallingThirdPartyService, nil
+	case "MiddlewareService":
+		return ErrCode_MiddlewareService, nil
+	case "RPCService":
+		return ErrCode_RPCService, nil
+	case "RPCServiceNotFind":
+		return ErrCode_RPCServiceNotFind, nil
+	case "RPCServiceNotRegistered":
+		return ErrCode_RPCServiceNotRegistered, nil
+	case "InterfaceNotExist":
+		return ErrCode_InterfaceNotExist, nil
+	case "CacheService":
+		return ErrCode_CacheService, nil
+	case "KeyLengthExceedsLimit":
+		return ErrCode_KeyLengthExceedsLimit, nil
+	case "ValueLengthExceedsLimit":
+		return ErrCode_ValueLengthExceedsLimit, nil
+	case "StorageCapacityFull":
+		return ErrCode_StorageCapacityFull, nil
+	case "UnsupportedDataFormat":
+		return ErrCode_UnsupportedDataFormat, nil
+	case "DatabaseService":
+		return ErrCode_DatabaseService, nil
+	case "TableDoesNotExist":
+		return ErrCode_TableDoesNotExist, nil
+	case "ColumnDoesNotExist":
+		return ErrCode_ColumnDoesNotExist, nil
+	case "DatabaseDeadlock":
+		return ErrCode_DatabaseDeadlock, nil
+	}
+	return ErrCode(0), fmt.Errorf("not a valid ErrCode string")
+}
+
+func ErrCodePtr(v ErrCode) *ErrCode { return &v }
+func (p *ErrCode) Scan(value interface{}) (err error) {
+	var result sql.NullInt64
+	err = result.Scan(value)
+	*p = ErrCode(result.Int64)
+	return
+}
+
+func (p *ErrCode) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
+}
+
 type DouyinCommentActionRequest struct {
 	Token       string  `thrift:"token,1,required" frugal:"1,required,string" json:"token"`
 	VideoId     int64   `thrift:"video_id,2,required" frugal:"2,required,i64" json:"video_id"`
-	ActionType  int32   `thrift:"action_type,3,required" frugal:"3,required,i32" json:"action_type"`
+	ActionType  int8    `thrift:"action_type,3,required" frugal:"3,required,i8" json:"action_type"`
 	CommentText *string `thrift:"comment_text,4,optional" frugal:"4,optional,string" json:"comment_text,omitempty"`
 	CommentId   *int64  `thrift:"comment_id,5,optional" frugal:"5,optional,i64" json:"comment_id,omitempty"`
 }
@@ -32,7 +282,7 @@ func (p *DouyinCommentActionRequest) GetVideoId() (v int64) {
 	return p.VideoId
 }
 
-func (p *DouyinCommentActionRequest) GetActionType() (v int32) {
+func (p *DouyinCommentActionRequest) GetActionType() (v int8) {
 	return p.ActionType
 }
 
@@ -59,7 +309,7 @@ func (p *DouyinCommentActionRequest) SetToken(val string) {
 func (p *DouyinCommentActionRequest) SetVideoId(val int64) {
 	p.VideoId = val
 }
-func (p *DouyinCommentActionRequest) SetActionType(val int32) {
+func (p *DouyinCommentActionRequest) SetActionType(val int8) {
 	p.ActionType = val
 }
 func (p *DouyinCommentActionRequest) SetCommentText(val *string) {
@@ -130,7 +380,7 @@ func (p *DouyinCommentActionRequest) Read(iprot thrift.TProtocol) (err error) {
 				}
 			}
 		case 3:
-			if fieldTypeId == thrift.I32 {
+			if fieldTypeId == thrift.BYTE {
 				if err = p.ReadField3(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -225,7 +475,7 @@ func (p *DouyinCommentActionRequest) ReadField2(iprot thrift.TProtocol) error {
 }
 
 func (p *DouyinCommentActionRequest) ReadField3(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI32(); err != nil {
+	if v, err := iprot.ReadByte(); err != nil {
 		return err
 	} else {
 		p.ActionType = v
@@ -331,10 +581,10 @@ WriteFieldEndError:
 }
 
 func (p *DouyinCommentActionRequest) writeField3(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("action_type", thrift.I32, 3); err != nil {
+	if err = oprot.WriteFieldBegin("action_type", thrift.BYTE, 3); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI32(p.ActionType); err != nil {
+	if err := oprot.WriteByte(p.ActionType); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -430,7 +680,7 @@ func (p *DouyinCommentActionRequest) Field2DeepEqual(src int64) bool {
 	}
 	return true
 }
-func (p *DouyinCommentActionRequest) Field3DeepEqual(src int32) bool {
+func (p *DouyinCommentActionRequest) Field3DeepEqual(src int8) bool {
 
 	if p.ActionType != src {
 		return false
@@ -463,7 +713,7 @@ func (p *DouyinCommentActionRequest) Field5DeepEqual(src *int64) bool {
 }
 
 type DouyinCommentActionResponse struct {
-	StatusCode int32    `thrift:"status_code,1,required" frugal:"1,required,i32" json:"status_code"`
+	StatusCode int64    `thrift:"status_code,1,required" frugal:"1,required,i64" json:"status_code"`
 	StatusMsg  *string  `thrift:"status_msg,2,optional" frugal:"2,optional,string" json:"status_msg,omitempty"`
 	Comment    *Comment `thrift:"comment,3,optional" frugal:"3,optional,Comment" json:"comment,omitempty"`
 }
@@ -476,7 +726,7 @@ func (p *DouyinCommentActionResponse) InitDefault() {
 	*p = DouyinCommentActionResponse{}
 }
 
-func (p *DouyinCommentActionResponse) GetStatusCode() (v int32) {
+func (p *DouyinCommentActionResponse) GetStatusCode() (v int64) {
 	return p.StatusCode
 }
 
@@ -497,7 +747,7 @@ func (p *DouyinCommentActionResponse) GetComment() (v *Comment) {
 	}
 	return p.Comment
 }
-func (p *DouyinCommentActionResponse) SetStatusCode(val int32) {
+func (p *DouyinCommentActionResponse) SetStatusCode(val int64) {
 	p.StatusCode = val
 }
 func (p *DouyinCommentActionResponse) SetStatusMsg(val *string) {
@@ -542,7 +792,7 @@ func (p *DouyinCommentActionResponse) Read(iprot thrift.TProtocol) (err error) {
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I32 {
+			if fieldTypeId == thrift.I64 {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -609,7 +859,7 @@ RequiredFieldNotSetError:
 }
 
 func (p *DouyinCommentActionResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI32(); err != nil {
+	if v, err := iprot.ReadI64(); err != nil {
 		return err
 	} else {
 		p.StatusCode = v
@@ -672,10 +922,10 @@ WriteStructEndError:
 }
 
 func (p *DouyinCommentActionResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I32, 1); err != nil {
+	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI32(p.StatusCode); err != nil {
+	if err := oprot.WriteI64(p.StatusCode); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -751,7 +1001,7 @@ func (p *DouyinCommentActionResponse) DeepEqual(ano *DouyinCommentActionResponse
 	return true
 }
 
-func (p *DouyinCommentActionResponse) Field1DeepEqual(src int32) bool {
+func (p *DouyinCommentActionResponse) Field1DeepEqual(src int64) bool {
 
 	if p.StatusCode != src {
 		return false
@@ -1017,7 +1267,7 @@ func (p *DouyinCommentListRequest) Field2DeepEqual(src int64) bool {
 }
 
 type DouyinCommentListResponse struct {
-	StatusCode  int32      `thrift:"status_code,1,required" frugal:"1,required,i32" json:"status_code"`
+	StatusCode  int64      `thrift:"status_code,1,required" frugal:"1,required,i64" json:"status_code"`
 	StatusMsg   *string    `thrift:"status_msg,2,optional" frugal:"2,optional,string" json:"status_msg,omitempty"`
 	CommentList []*Comment `thrift:"comment_list,3" frugal:"3,default,list<Comment>" json:"comment_list"`
 }
@@ -1030,7 +1280,7 @@ func (p *DouyinCommentListResponse) InitDefault() {
 	*p = DouyinCommentListResponse{}
 }
 
-func (p *DouyinCommentListResponse) GetStatusCode() (v int32) {
+func (p *DouyinCommentListResponse) GetStatusCode() (v int64) {
 	return p.StatusCode
 }
 
@@ -1046,7 +1296,7 @@ func (p *DouyinCommentListResponse) GetStatusMsg() (v string) {
 func (p *DouyinCommentListResponse) GetCommentList() (v []*Comment) {
 	return p.CommentList
 }
-func (p *DouyinCommentListResponse) SetStatusCode(val int32) {
+func (p *DouyinCommentListResponse) SetStatusCode(val int64) {
 	p.StatusCode = val
 }
 func (p *DouyinCommentListResponse) SetStatusMsg(val *string) {
@@ -1087,7 +1337,7 @@ func (p *DouyinCommentListResponse) Read(iprot thrift.TProtocol) (err error) {
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I32 {
+			if fieldTypeId == thrift.I64 {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -1154,7 +1404,7 @@ RequiredFieldNotSetError:
 }
 
 func (p *DouyinCommentListResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI32(); err != nil {
+	if v, err := iprot.ReadI64(); err != nil {
 		return err
 	} else {
 		p.StatusCode = v
@@ -1229,10 +1479,10 @@ WriteStructEndError:
 }
 
 func (p *DouyinCommentListResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I32, 1); err != nil {
+	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI32(p.StatusCode); err != nil {
+	if err := oprot.WriteI64(p.StatusCode); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -1314,7 +1564,7 @@ func (p *DouyinCommentListResponse) DeepEqual(ano *DouyinCommentListResponse) bo
 	return true
 }
 
-func (p *DouyinCommentListResponse) Field1DeepEqual(src int32) bool {
+func (p *DouyinCommentListResponse) Field1DeepEqual(src int64) bool {
 
 	if p.StatusCode != src {
 		return false
@@ -2240,6 +2490,887 @@ func (p *User) Field5DeepEqual(src bool) bool {
 func (p *User) Field6DeepEqual(src string) bool {
 
 	if strings.Compare(p.Avatar, src) != 0 {
+		return false
+	}
+	return true
+}
+
+type CommentService interface {
+	CommentAction(ctx context.Context, req *DouyinCommentActionRequest) (r *DouyinCommentActionResponse, err error)
+
+	GetCommentList(ctx context.Context, req *DouyinCommentListRequest) (r *DouyinCommentListResponse, err error)
+}
+
+type CommentServiceClient struct {
+	c thrift.TClient
+}
+
+func NewCommentServiceClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *CommentServiceClient {
+	return &CommentServiceClient{
+		c: thrift.NewTStandardClient(f.GetProtocol(t), f.GetProtocol(t)),
+	}
+}
+
+func NewCommentServiceClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *CommentServiceClient {
+	return &CommentServiceClient{
+		c: thrift.NewTStandardClient(iprot, oprot),
+	}
+}
+
+func NewCommentServiceClient(c thrift.TClient) *CommentServiceClient {
+	return &CommentServiceClient{
+		c: c,
+	}
+}
+
+func (p *CommentServiceClient) Client_() thrift.TClient {
+	return p.c
+}
+
+func (p *CommentServiceClient) CommentAction(ctx context.Context, req *DouyinCommentActionRequest) (r *DouyinCommentActionResponse, err error) {
+	var _args CommentServiceCommentActionArgs
+	_args.Req = req
+	var _result CommentServiceCommentActionResult
+	if err = p.Client_().Call(ctx, "CommentAction", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+func (p *CommentServiceClient) GetCommentList(ctx context.Context, req *DouyinCommentListRequest) (r *DouyinCommentListResponse, err error) {
+	var _args CommentServiceGetCommentListArgs
+	_args.Req = req
+	var _result CommentServiceGetCommentListResult
+	if err = p.Client_().Call(ctx, "GetCommentList", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+
+type CommentServiceProcessor struct {
+	processorMap map[string]thrift.TProcessorFunction
+	handler      CommentService
+}
+
+func (p *CommentServiceProcessor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {
+	p.processorMap[key] = processor
+}
+
+func (p *CommentServiceProcessor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, ok bool) {
+	processor, ok = p.processorMap[key]
+	return processor, ok
+}
+
+func (p *CommentServiceProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
+	return p.processorMap
+}
+
+func NewCommentServiceProcessor(handler CommentService) *CommentServiceProcessor {
+	self := &CommentServiceProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
+	self.AddToProcessorMap("CommentAction", &commentServiceProcessorCommentAction{handler: handler})
+	self.AddToProcessorMap("GetCommentList", &commentServiceProcessorGetCommentList{handler: handler})
+	return self
+}
+func (p *CommentServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	name, _, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return false, err
+	}
+	if processor, ok := p.GetProcessorFunction(name); ok {
+		return processor.Process(ctx, seqId, iprot, oprot)
+	}
+	iprot.Skip(thrift.STRUCT)
+	iprot.ReadMessageEnd()
+	x := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
+	oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
+	x.Write(oprot)
+	oprot.WriteMessageEnd()
+	oprot.Flush(ctx)
+	return false, x
+}
+
+type commentServiceProcessorCommentAction struct {
+	handler CommentService
+}
+
+func (p *commentServiceProcessorCommentAction) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := CommentServiceCommentActionArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("CommentAction", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := CommentServiceCommentActionResult{}
+	var retval *DouyinCommentActionResponse
+	if retval, err2 = p.handler.CommentAction(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing CommentAction: "+err2.Error())
+		oprot.WriteMessageBegin("CommentAction", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("CommentAction", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type commentServiceProcessorGetCommentList struct {
+	handler CommentService
+}
+
+func (p *commentServiceProcessorGetCommentList) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := CommentServiceGetCommentListArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("GetCommentList", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := CommentServiceGetCommentListResult{}
+	var retval *DouyinCommentListResponse
+	if retval, err2 = p.handler.GetCommentList(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing GetCommentList: "+err2.Error())
+		oprot.WriteMessageBegin("GetCommentList", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("GetCommentList", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type CommentServiceCommentActionArgs struct {
+	Req *DouyinCommentActionRequest `thrift:"req,1" frugal:"1,default,DouyinCommentActionRequest" json:"req"`
+}
+
+func NewCommentServiceCommentActionArgs() *CommentServiceCommentActionArgs {
+	return &CommentServiceCommentActionArgs{}
+}
+
+func (p *CommentServiceCommentActionArgs) InitDefault() {
+	*p = CommentServiceCommentActionArgs{}
+}
+
+var CommentServiceCommentActionArgs_Req_DEFAULT *DouyinCommentActionRequest
+
+func (p *CommentServiceCommentActionArgs) GetReq() (v *DouyinCommentActionRequest) {
+	if !p.IsSetReq() {
+		return CommentServiceCommentActionArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *CommentServiceCommentActionArgs) SetReq(val *DouyinCommentActionRequest) {
+	p.Req = val
+}
+
+var fieldIDToName_CommentServiceCommentActionArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *CommentServiceCommentActionArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *CommentServiceCommentActionArgs) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_CommentServiceCommentActionArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *CommentServiceCommentActionArgs) ReadField1(iprot thrift.TProtocol) error {
+	p.Req = NewDouyinCommentActionRequest()
+	if err := p.Req.Read(iprot); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *CommentServiceCommentActionArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("CommentAction_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *CommentServiceCommentActionArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *CommentServiceCommentActionArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("CommentServiceCommentActionArgs(%+v)", *p)
+}
+
+func (p *CommentServiceCommentActionArgs) DeepEqual(ano *CommentServiceCommentActionArgs) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field1DeepEqual(ano.Req) {
+		return false
+	}
+	return true
+}
+
+func (p *CommentServiceCommentActionArgs) Field1DeepEqual(src *DouyinCommentActionRequest) bool {
+
+	if !p.Req.DeepEqual(src) {
+		return false
+	}
+	return true
+}
+
+type CommentServiceCommentActionResult struct {
+	Success *DouyinCommentActionResponse `thrift:"success,0,optional" frugal:"0,optional,DouyinCommentActionResponse" json:"success,omitempty"`
+}
+
+func NewCommentServiceCommentActionResult() *CommentServiceCommentActionResult {
+	return &CommentServiceCommentActionResult{}
+}
+
+func (p *CommentServiceCommentActionResult) InitDefault() {
+	*p = CommentServiceCommentActionResult{}
+}
+
+var CommentServiceCommentActionResult_Success_DEFAULT *DouyinCommentActionResponse
+
+func (p *CommentServiceCommentActionResult) GetSuccess() (v *DouyinCommentActionResponse) {
+	if !p.IsSetSuccess() {
+		return CommentServiceCommentActionResult_Success_DEFAULT
+	}
+	return p.Success
+}
+func (p *CommentServiceCommentActionResult) SetSuccess(x interface{}) {
+	p.Success = x.(*DouyinCommentActionResponse)
+}
+
+var fieldIDToName_CommentServiceCommentActionResult = map[int16]string{
+	0: "success",
+}
+
+func (p *CommentServiceCommentActionResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *CommentServiceCommentActionResult) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_CommentServiceCommentActionResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *CommentServiceCommentActionResult) ReadField0(iprot thrift.TProtocol) error {
+	p.Success = NewDouyinCommentActionResponse()
+	if err := p.Success.Read(iprot); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *CommentServiceCommentActionResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("CommentAction_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *CommentServiceCommentActionResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *CommentServiceCommentActionResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("CommentServiceCommentActionResult(%+v)", *p)
+}
+
+func (p *CommentServiceCommentActionResult) DeepEqual(ano *CommentServiceCommentActionResult) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field0DeepEqual(ano.Success) {
+		return false
+	}
+	return true
+}
+
+func (p *CommentServiceCommentActionResult) Field0DeepEqual(src *DouyinCommentActionResponse) bool {
+
+	if !p.Success.DeepEqual(src) {
+		return false
+	}
+	return true
+}
+
+type CommentServiceGetCommentListArgs struct {
+	Req *DouyinCommentListRequest `thrift:"req,1" frugal:"1,default,DouyinCommentListRequest" json:"req"`
+}
+
+func NewCommentServiceGetCommentListArgs() *CommentServiceGetCommentListArgs {
+	return &CommentServiceGetCommentListArgs{}
+}
+
+func (p *CommentServiceGetCommentListArgs) InitDefault() {
+	*p = CommentServiceGetCommentListArgs{}
+}
+
+var CommentServiceGetCommentListArgs_Req_DEFAULT *DouyinCommentListRequest
+
+func (p *CommentServiceGetCommentListArgs) GetReq() (v *DouyinCommentListRequest) {
+	if !p.IsSetReq() {
+		return CommentServiceGetCommentListArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *CommentServiceGetCommentListArgs) SetReq(val *DouyinCommentListRequest) {
+	p.Req = val
+}
+
+var fieldIDToName_CommentServiceGetCommentListArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *CommentServiceGetCommentListArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *CommentServiceGetCommentListArgs) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_CommentServiceGetCommentListArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *CommentServiceGetCommentListArgs) ReadField1(iprot thrift.TProtocol) error {
+	p.Req = NewDouyinCommentListRequest()
+	if err := p.Req.Read(iprot); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *CommentServiceGetCommentListArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("GetCommentList_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *CommentServiceGetCommentListArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *CommentServiceGetCommentListArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("CommentServiceGetCommentListArgs(%+v)", *p)
+}
+
+func (p *CommentServiceGetCommentListArgs) DeepEqual(ano *CommentServiceGetCommentListArgs) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field1DeepEqual(ano.Req) {
+		return false
+	}
+	return true
+}
+
+func (p *CommentServiceGetCommentListArgs) Field1DeepEqual(src *DouyinCommentListRequest) bool {
+
+	if !p.Req.DeepEqual(src) {
+		return false
+	}
+	return true
+}
+
+type CommentServiceGetCommentListResult struct {
+	Success *DouyinCommentListResponse `thrift:"success,0,optional" frugal:"0,optional,DouyinCommentListResponse" json:"success,omitempty"`
+}
+
+func NewCommentServiceGetCommentListResult() *CommentServiceGetCommentListResult {
+	return &CommentServiceGetCommentListResult{}
+}
+
+func (p *CommentServiceGetCommentListResult) InitDefault() {
+	*p = CommentServiceGetCommentListResult{}
+}
+
+var CommentServiceGetCommentListResult_Success_DEFAULT *DouyinCommentListResponse
+
+func (p *CommentServiceGetCommentListResult) GetSuccess() (v *DouyinCommentListResponse) {
+	if !p.IsSetSuccess() {
+		return CommentServiceGetCommentListResult_Success_DEFAULT
+	}
+	return p.Success
+}
+func (p *CommentServiceGetCommentListResult) SetSuccess(x interface{}) {
+	p.Success = x.(*DouyinCommentListResponse)
+}
+
+var fieldIDToName_CommentServiceGetCommentListResult = map[int16]string{
+	0: "success",
+}
+
+func (p *CommentServiceGetCommentListResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *CommentServiceGetCommentListResult) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_CommentServiceGetCommentListResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *CommentServiceGetCommentListResult) ReadField0(iprot thrift.TProtocol) error {
+	p.Success = NewDouyinCommentListResponse()
+	if err := p.Success.Read(iprot); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *CommentServiceGetCommentListResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("GetCommentList_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *CommentServiceGetCommentListResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *CommentServiceGetCommentListResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("CommentServiceGetCommentListResult(%+v)", *p)
+}
+
+func (p *CommentServiceGetCommentListResult) DeepEqual(ano *CommentServiceGetCommentListResult) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field0DeepEqual(ano.Success) {
+		return false
+	}
+	return true
+}
+
+func (p *CommentServiceGetCommentListResult) Field0DeepEqual(src *DouyinCommentListResponse) bool {
+
+	if !p.Success.DeepEqual(src) {
 		return false
 	}
 	return true
