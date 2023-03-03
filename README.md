@@ -55,6 +55,54 @@ A simple note service built with `Kitex` and `Hertz` which is divided into three
 docker-compose up
 ```
 
+### Run Comment RPC Server
+
+```shell
+cd cmd/user
+sh build.sh
+sh output/bootstrap.sh
+```
+
+### Run Favorite RPC Server
+
+```shell
+cd cmd/user
+sh build.sh
+sh output/bootstrap.sh
+```
+
+### Run Feed RPC Server
+
+```shell
+cd cmd/user
+sh build.sh
+sh output/bootstrap.sh
+```
+
+### Run Message RPC Server
+
+```shell
+cd cmd/user
+sh build.sh
+sh output/bootstrap.sh
+```
+
+### Run Publish RPC Server
+
+```shell
+cd cmd/user
+sh build.sh
+sh output/bootstrap.sh
+```
+
+### Run Relation RPC Server
+
+```shell
+cd cmd/user
+sh build.sh
+sh output/bootstrap.sh
+```
+
 ### Run User RPC Server
 
 ```shell
