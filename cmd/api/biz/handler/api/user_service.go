@@ -4,14 +4,15 @@ package api
 
 import (
 	"context"
+
+	"douyin/cmd/api/biz/model/api"
 	"douyin/cmd/api/biz/rpc"
 	"douyin/kitex_gen/user"
 	"douyin/pkg/errno"
 	"douyin/pkg/global"
-	"github.com/cloudwego/hertz/pkg/common/hlog"
 
-	api "douyin/cmd/api/biz/model/api"
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
 
@@ -22,7 +23,10 @@ func Register(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinUserRegisterRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 
@@ -50,7 +54,10 @@ func Login(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinUserLoginRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 
@@ -78,7 +85,10 @@ func GetUserInfo(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinUserRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 

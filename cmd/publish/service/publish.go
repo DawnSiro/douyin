@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"io"
 	"time"
 
@@ -69,29 +70,14 @@ func (s *PublishService) PublishAction(title string, videoData []byte, userID ui
 	}, nil
 }
 
-func (s *PublishService) GetPublishVideos(userID uint64) (*publish.DouyinPublishListResponse, error) {
-	videoList := make([]*publish.Video, 0)
-
-	videos, err := db.GetVideosByAuthorID(s.ctx, userID)
+func (s *PublishService) GetPublishVideos(userID, selectUserID uint64) (*publish.DouyinPublishListResponse, error) {
+	videoData, err := db.SelectPublishVideoDataListByUserID(s.ctx, userID, selectUserID)
 	if err != nil {
-		klog.Error("service.publish.GetPublishVideos err:", err.Error())
+		hlog.Error("service.publish.GetPublishVideos err:", err.Error())
 		return nil, err
 	}
-
-	for i := 0; i < len(videos); i++ {
-		u, err := db.SelectUserByID(s.ctx, videos[i].AuthorID)
-		if err != nil {
-			klog.Error("service.publish.GetPublishVideos err:", err.Error())
-			return nil, err
-		}
-
-		video := pack.Video(videos[i], u,
-			db.IsFollow(s.ctx, userID, u.ID), db.IsFavoriteVideo(s.ctx, userID, videos[i].ID))
-		videoList = append(videoList, video)
-	}
-
 	return &publish.DouyinPublishListResponse{
 		StatusCode: errno.Success.ErrCode,
-		VideoList:  videoList,
+		VideoList:  pack.VideoDataList(videoData),
 	}, nil
 }

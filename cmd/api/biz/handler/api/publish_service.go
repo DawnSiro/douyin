@@ -5,16 +5,17 @@ package api
 import (
 	"bytes"
 	"context"
+	"io"
+	"mime/multipart"
+
+	"douyin/cmd/api/biz/model/api"
 	"douyin/cmd/api/biz/rpc"
 	"douyin/kitex_gen/publish"
 	"douyin/pkg/errno"
 	"douyin/pkg/global"
-	"github.com/cloudwego/hertz/pkg/common/hlog"
-	"io"
-	"mime/multipart"
 
-	api "douyin/cmd/api/biz/model/api"
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
 
@@ -25,7 +26,10 @@ func PublishAction(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinPublishActionRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 
@@ -91,7 +95,10 @@ func GetPublishVideos(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinPublishListRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 

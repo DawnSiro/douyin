@@ -17,12 +17,14 @@ enum ErrCode {
 	UserLoginHasExpired                      = 10230
 	AccessPermission                         = 10300 // 访问权限异常 二级宏观错误码
 	DeletePermission                         = 10310 // 删除权限异常 普通用户不能删除别人的评论
+	VideoLikeLimit                           = 10320 //
 	UserRequestParameter                     = 10400 // 用户请求参数错误 二级宏观错误码
 	RepeatOperationError                     = 10410 // 用户重复操作
 	IllegalUserInput                         = 10430
 	ContainsProhibitedSensitiveWords         = 10431
 	UserUploadFile                           = 10500 // 用户上传文件异常 二级宏观错误码
 	FileTypeUploadedNotMatch                 = 10501
+	FileTypeUploadedNotSupport               = 10502
 	VideoUploadedTooLarge                    = 10504
 	Service                                  = 20000 // 未知异常
 	SystemExecution                          = 20001 // 系统执行出错 一级宏观错误码
@@ -44,6 +46,11 @@ enum ErrCode {
 	TableDoesNotExist                        = 30211
 	ColumnDoesNotExist                       = 30212
 	DatabaseDeadlock                         = 30231
+}
+
+struct douyin_response {
+  1: required i64 status_code // 状态码，0-成功，其他值-失败
+  2: required string status_msg // 返回状态描述
 }
 
 struct douyin_comment_action_request {

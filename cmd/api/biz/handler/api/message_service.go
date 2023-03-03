@@ -4,14 +4,15 @@ package api
 
 import (
 	"context"
+
+	"douyin/cmd/api/biz/model/api"
 	"douyin/cmd/api/biz/rpc"
 	"douyin/kitex_gen/message"
 	"douyin/pkg/errno"
 	"douyin/pkg/global"
-	"github.com/cloudwego/hertz/pkg/common/hlog"
 
-	api "douyin/cmd/api/biz/model/api"
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
 
@@ -22,7 +23,10 @@ func SendMessage(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinMessageActionRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 
@@ -55,8 +59,10 @@ func GetMessageChat(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinMessageChatRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		hlog.Info(err)
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 

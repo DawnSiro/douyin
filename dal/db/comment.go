@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"douyin/pkg/constant"
-	"douyin/pkg/errno"
-
 	"gorm.io/gorm"
 )
 
@@ -38,17 +36,17 @@ func CreateComment(ctx context.Context, videoID uint64, content string, userID u
 		video := &Video{
 			ID: videoID,
 		}
-		err := global.DB.WithContext(ctx).First(&video).Error
+		err := tx.WithContext(ctx).First(&video).Error
 		if err != nil {
 			return err
 		}
 		// 增加视频评论数
-		err = global.DB.WithContext(ctx).Model(&video).Update("comment_count", video.CommentCount+1).Error
+		err = tx.WithContext(ctx).Model(&video).Update("comment_count", video.CommentCount+1).Error
 		if err != nil {
 			return err
 		}
 		// 创建评论
-		return global.DB.WithContext(ctx).Create(comment).Error
+		return tx.WithContext(ctx).Create(comment).Error
 	})
 	if err != nil {
 		return nil, err
@@ -74,23 +72,16 @@ func DeleteCommentByID(ctx context.Context, videoID, commentID uint64) (*Comment
 		video := &Video{
 			ID: videoID,
 		}
-		err := global.DB.WithContext(ctx).First(&video).Error
+		err := tx.WithContext(ctx).First(&video).Error
 		if err != nil {
 			return err
 		}
-		err = global.DB.WithContext(ctx).Model(&video).Update("comment_count", video.CommentCount-1).Error
+		err = tx.WithContext(ctx).Model(&video).Update("comment_count", video.CommentCount-1).Error
 		if err != nil {
 			return err
 		}
 		// 删除评论
-		result = global.DB.WithContext(ctx).Model(comment).Update("is_deleted", constant.DataDeleted)
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected == 0 {
-			return errno.UserRequestParameterError
-		}
-		return nil
+		return tx.WithContext(ctx).Model(comment).Update("is_deleted", constant.DataDeleted).Error
 	})
 	if err != nil {
 		return nil, err
@@ -115,4 +106,30 @@ func IsCommentCreatedByMyself(ctx context.Context, userID uint64, commentID uint
 		return false
 	}
 	return true
+}
+
+type CommentData struct {
+	CID            uint64 `gorm:"column:cid"`
+	Content        string
+	CreatedTime    time.Time
+	UID            uint64
+	Username       string
+	FollowingCount uint64
+	FollowerCount  uint64
+	Avatar         string
+	IsFollow       bool
+}
+
+func SelectCommentDataByVideoIDANDUserID(ctx context.Context, videoID, userID uint64) ([]*CommentData, error) {
+	cs := make([]*CommentData, 0)
+	err := global.DB.WithContext(ctx).Select("c.id AS cid, c.content, c.created_time, "+
+		"u.id AS uid, u.username, u.following_count, u.follower_count, u.avatar, "+
+		"IF(r.is_deleted = 0, TRUE, FALSE) AS is_follow").Table(constant.UserTableName+" AS u").
+		Joins("LEFT JOIN "+constant.CommentTableName+" AS c ON u.id = c.user_id").
+		Joins("LEFT JOIN "+constant.RelationTableName+" AS r ON u.id = r.`to_user_id` AND r.user_id = ?", userID).
+		Where("`video_id` = ?", videoID).Scan(&cs).Error
+	if err != nil {
+		return nil, err
+	}
+	return cs, nil
 }

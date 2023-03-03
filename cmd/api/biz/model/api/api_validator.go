@@ -21,6 +21,9 @@ var (
 	_ = time.Nanosecond
 )
 
+func (p *DouyinResponse) IsValid() error {
+	return nil
+}
 func (p *DouyinCommentActionRequest) IsValid() error {
 	if p.VideoID <= int64(0) {
 		return fmt.Errorf("field VideoID gt rule failed, current value: %v", p.VideoID)

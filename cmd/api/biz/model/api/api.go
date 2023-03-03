@@ -29,12 +29,14 @@ const (
 	ErrCode_UserLoginHasExpired                      ErrCode = 10230
 	ErrCode_AccessPermission                         ErrCode = 10300
 	ErrCode_DeletePermission                         ErrCode = 10310
+	ErrCode_VideoLikeLimit                           ErrCode = 10320
 	ErrCode_UserRequestParameter                     ErrCode = 10400
 	ErrCode_RepeatOperationError                     ErrCode = 10410
 	ErrCode_IllegalUserInput                         ErrCode = 10430
 	ErrCode_ContainsProhibitedSensitiveWords         ErrCode = 10431
 	ErrCode_UserUploadFile                           ErrCode = 10500
 	ErrCode_FileTypeUploadedNotMatch                 ErrCode = 10501
+	ErrCode_FileTypeUploadedNotSupport               ErrCode = 10502
 	ErrCode_VideoUploadedTooLarge                    ErrCode = 10504
 	ErrCode_Service                                  ErrCode = 20000
 	ErrCode_SystemExecution                          ErrCode = 20001
@@ -92,6 +94,8 @@ func (p ErrCode) String() string {
 		return "AccessPermission"
 	case ErrCode_DeletePermission:
 		return "DeletePermission"
+	case ErrCode_VideoLikeLimit:
+		return "VideoLikeLimit"
 	case ErrCode_UserRequestParameter:
 		return "UserRequestParameter"
 	case ErrCode_RepeatOperationError:
@@ -104,6 +108,8 @@ func (p ErrCode) String() string {
 		return "UserUploadFile"
 	case ErrCode_FileTypeUploadedNotMatch:
 		return "FileTypeUploadedNotMatch"
+	case ErrCode_FileTypeUploadedNotSupport:
+		return "FileTypeUploadedNotSupport"
 	case ErrCode_VideoUploadedTooLarge:
 		return "VideoUploadedTooLarge"
 	case ErrCode_Service:
@@ -184,6 +190,8 @@ func ErrCodeFromString(s string) (ErrCode, error) {
 		return ErrCode_AccessPermission, nil
 	case "DeletePermission":
 		return ErrCode_DeletePermission, nil
+	case "VideoLikeLimit":
+		return ErrCode_VideoLikeLimit, nil
 	case "UserRequestParameter":
 		return ErrCode_UserRequestParameter, nil
 	case "RepeatOperationError":
@@ -196,6 +204,8 @@ func ErrCodeFromString(s string) (ErrCode, error) {
 		return ErrCode_UserUploadFile, nil
 	case "FileTypeUploadedNotMatch":
 		return ErrCode_FileTypeUploadedNotMatch, nil
+	case "FileTypeUploadedNotSupport":
+		return ErrCode_FileTypeUploadedNotSupport, nil
 	case "VideoUploadedTooLarge":
 		return ErrCode_VideoUploadedTooLarge, nil
 	case "Service":
@@ -255,6 +265,204 @@ func (p *ErrCode) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return int64(*p), nil
+}
+
+type DouyinResponse struct {
+	StatusCode int64  `thrift:"status_code,1,required" form:"status_code,required" json:"status_code,required" query:"status_code,required"`
+	StatusMsg  string `thrift:"status_msg,2,required" form:"status_msg,required" json:"status_msg,required" query:"status_msg,required"`
+}
+
+func NewDouyinResponse() *DouyinResponse {
+	return &DouyinResponse{}
+}
+
+func (p *DouyinResponse) GetStatusCode() (v int64) {
+	return p.StatusCode
+}
+
+func (p *DouyinResponse) GetStatusMsg() (v string) {
+	return p.StatusMsg
+}
+
+var fieldIDToName_DouyinResponse = map[int16]string{
+	1: "status_code",
+	2: "status_msg",
+}
+
+func (p *DouyinResponse) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+	var issetStatusCode bool = false
+	var issetStatusMsg bool = false
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.I64 {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+				issetStatusCode = true
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		case 2:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField2(iprot); err != nil {
+					goto ReadFieldError
+				}
+				issetStatusMsg = true
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	if !issetStatusCode {
+		fieldId = 1
+		goto RequiredFieldNotSetError
+	}
+
+	if !issetStatusMsg {
+		fieldId = 2
+		goto RequiredFieldNotSetError
+	}
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_DouyinResponse[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+RequiredFieldNotSetError:
+	return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("required field %s is not set", fieldIDToName_DouyinResponse[fieldId]))
+}
+
+func (p *DouyinResponse) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI64(); err != nil {
+		return err
+	} else {
+		p.StatusCode = v
+	}
+	return nil
+}
+
+func (p *DouyinResponse) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.StatusMsg = v
+	}
+	return nil
+}
+
+func (p *DouyinResponse) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("douyin_response"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+		if err = p.writeField2(oprot); err != nil {
+			fieldId = 2
+			goto WriteFieldError
+		}
+
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *DouyinResponse) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteI64(p.StatusCode); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *DouyinResponse) writeField2(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.StatusMsg); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
+}
+
+func (p *DouyinResponse) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("DouyinResponse(%+v)", *p)
 }
 
 type DouyinCommentActionRequest struct {

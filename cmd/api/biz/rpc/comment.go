@@ -2,10 +2,12 @@ package rpc
 
 import (
 	"context"
+
 	"douyin/kitex_gen/comment"
 	"douyin/kitex_gen/comment/commentservice"
 	"douyin/pkg/constant"
 	"douyin/pkg/mw"
+
 	"github.com/cloudwego/kitex/client"
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
 	"github.com/kitex-contrib/obs-opentelemetry/provider"

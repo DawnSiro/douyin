@@ -40,10 +40,10 @@ func (s *PublishServiceImpl) GetPublishVideos(ctx context.Context, req *publish.
 	}
 
 	// 解析 Token，再验一次权
-	_, err = util.ParseToken(req.Token)
+	claim, err := util.ParseToken(req.Token)
 	if err != nil {
 		klog.Error("handler.handler.CommentAction err:", err.Error())
 		return nil, err
 	}
-	return service.NewPublishService(ctx).GetPublishVideos(uint64(req.UserId))
+	return service.NewPublishService(ctx).GetPublishVideos(claim.UserID, uint64(req.UserId))
 }

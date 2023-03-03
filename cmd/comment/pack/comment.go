@@ -38,3 +38,33 @@ func User(u *db.User, isFollow bool) *comment.User {
 		Avatar:        u.Avatar,
 	}
 }
+
+func CommentData(data *db.CommentData) *comment.Comment {
+	if data == nil {
+		return nil
+	}
+	followCount := int64(data.FollowingCount)
+	followerCount := int64(data.FollowerCount)
+	u := &comment.User{
+		Id:            int64(data.UID),
+		Name:          data.Username,
+		FollowCount:   &followCount,
+		FollowerCount: &followerCount,
+		IsFollow:      data.IsFollow,
+		Avatar:        data.Avatar,
+	}
+	return &comment.Comment{
+		Id:         int64(data.CID),
+		User:       u,
+		Content:    data.Content,
+		CreateDate: data.CreatedTime.Format("01-02"), // 评论发布日期，格式 mm-dd
+	}
+}
+
+func CommentDataList(cdList []*db.CommentData) []*comment.Comment {
+	res := make([]*comment.Comment, 0, len(cdList))
+	for i := 0; i < len(cdList); i++ {
+		res = append(res, CommentData(cdList[i]))
+	}
+	return res
+}
