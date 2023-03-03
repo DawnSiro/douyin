@@ -43,3 +43,27 @@ func FriendUser(u *db.User, isFollow bool, messageContent string, msgType uint8)
 		MsgType:       int8(msgType),
 	}
 }
+
+func RelationData(data *db.RelationUserData) *relation.User {
+	if data == nil {
+		return nil
+	}
+	followCount := int64(data.FollowingCount)
+	followerCount := int64(data.FollowerCount)
+	return &relation.User{
+		Id:            int64(data.UID),
+		Name:          data.Username,
+		FollowCount:   &followCount,
+		FollowerCount: &followerCount,
+		IsFollow:      data.IsFollow,
+		Avatar:        data.Avatar,
+	}
+}
+
+func RelationDataList(dataList []*db.RelationUserData) []*relation.User {
+	res := make([]*relation.User, 0, len(dataList))
+	for i := 0; i < len(dataList); i++ {
+		res = append(res, RelationData(dataList[i]))
+	}
+	return res
+}

@@ -13,9 +13,7 @@ import (
 	"douyin/pkg/global"
 	"douyin/pkg/util/sensitive"
 
-	"github.com/cloudwego/hertz/pkg/common/json"
 	"github.com/cloudwego/kitex/pkg/klog"
-	"github.com/go-redis/redis"
 )
 
 type CommentService struct {
@@ -111,51 +109,12 @@ func (s *CommentService) DeleteComment(userID, videoID, commentID uint64) (*comm
 }
 
 func (s *CommentService) GetCommentList(userID, videoID uint64) (*comment.DouyinCommentListResponse, error) {
-	var builder strings.Builder
-	builder.WriteString(strconv.FormatUint(userID, 10))
-	builder.WriteString("_userId_")
-	builder.WriteString(strconv.FormatUint(videoID, 10))
-	builder.WriteString("_video_comments")
-	commentListKey := builder.String()
-
-	commentList, err := global.VideoCRC.Get(commentListKey).Result()
-	if err == redis.Nil {
-		dbcList, err := db.SelectCommentListByVideoID(s.ctx, videoID)
-		if err != nil {
-			klog.Error("service.comment.GetCommentList err:", err.Error())
-			return nil, err
-		}
-
-		cList := make([]*comment.Comment, 0, len(dbcList))
-
-		for i := 0; i < len(dbcList); i++ {
-			u, _ := db.SelectUserByID(s.ctx, dbcList[i].UserID)
-			cList = append(cList, pack.Comment(dbcList[i], u, db.IsFollow(s.ctx, userID, dbcList[i].UserID)))
-		}
-
-		//序列化
-		marshalList, _ := json.Marshal(cList)
-		_, err = global.VideoCRC.Set(commentListKey, marshalList, 0).Result()
-		if err != nil {
-			klog.Error("service.comment.GetCommentList err:", err.Error())
-			return nil, err
-		}
-		commentList, err = global.VideoCRC.Get(commentListKey).Result()
-		if err != nil {
-			klog.Error("service.comment.GetCommentList err:", err.Error())
-			return nil, err
-		}
-	}
-	//反序列化
-	var list []*comment.Comment
-	err = json.Unmarshal([]byte(commentList), &list)
+	commentData, err := db.SelectCommentDataByVideoIDANDUserID(s.ctx, videoID, userID)
 	if err != nil {
-		klog.Error("service.comment.GetCommentList err:", err.Error())
 		return nil, err
 	}
-
 	return &comment.DouyinCommentListResponse{
 		StatusCode:  0,
-		CommentList: list,
+		CommentList: pack.CommentDataList(commentData),
 	}, nil
 }

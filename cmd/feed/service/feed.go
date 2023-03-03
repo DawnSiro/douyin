@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 
 	"douyin/cmd/feed/pack"
 	"douyin/dal/db"
@@ -23,45 +24,25 @@ func NewFeedService(ctx context.Context) *FeedService {
 }
 
 func (s *FeedService) GetFeed(latestTime *int64, userID uint64) (*feed.DouyinFeedResponse, error) {
-	videoList := make([]*feed.Video, 0)
-
-	videos, err := db.MGetVideos(s.ctx, constant.MaxVideoNum, latestTime)
+	videoData, err := db.MSelectFeedVideoDataListByUserID(s.ctx, constant.MaxVideoNum, latestTime, userID)
 	if err != nil {
 		klog.Error("service.feed.GetFeed err:", err.Error())
 		return nil, err
 	}
-
-	// TODO 使用预处理等进行优化
-	for i := 0; i < len(videos); i++ {
-		u, err := db.SelectUserByID(s.ctx, videos[i].AuthorID)
-		if err != nil {
-			klog.Error("service.feed.GetFeed err:", err.Error())
-			return nil, err
-		}
-
-		var video *feed.Video
-		// 未登录默认未关注，未点赞
-		if userID == 0 {
-			video = pack.Video(videos[i], u,
-				false, false)
-		} else {
-			video = pack.Video(videos[i], u,
-				db.IsFollow(s.ctx, userID, u.ID), db.IsFavoriteVideo(s.ctx, userID, videos[i].ID))
-		}
-
-		videoList = append(videoList, video)
-	}
-
 	var nextTime *int64
 	// 没有视频的时候 nextTime 为 nil，会重置时间
-	if len(videos) != 0 {
+	if len(videoData) != 0 {
 		nextTime = new(int64)
-		*nextTime = videos[len(videos)-1].PublishTime.UnixMilli()
+		*nextTime, err = db.SelectPublishTimeByVideoID(s.ctx, videoData[len(videoData)-1].VID)
+		if err != nil {
+			hlog.Error("service.feed.GetFeed err:", err.Error())
+			return nil, err
+		}
 	}
 
 	return &feed.DouyinFeedResponse{
 		StatusCode: errno.Success.ErrCode,
-		VideoList:  videoList,
+		VideoList:  pack.VideoDataList(videoData),
 		NextTime:   nextTime,
 	}, nil
 }

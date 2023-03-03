@@ -37,3 +37,42 @@ func Video(v *db.Video, u *db.User, isFollow, isFavorite bool) *publish.Video {
 		Title:         v.Title,
 	}
 }
+
+func VideoData(data *db.VideoData) *publish.Video {
+	if data == nil {
+		return nil
+	}
+	followCount := data.FollowCount
+	followerCount := data.FollowerCount
+	author := &publish.UserInfo{
+		Id:              int64(data.UID),
+		Name:            data.Username,
+		FollowCount:     followCount,
+		FollowerCount:   followerCount,
+		IsFollow:        data.IsFollow,
+		Avatar:          data.Avatar,
+		BackgroundImage: data.BackgroundImage,
+		Signature:       data.Signature,
+		TotalFavorited:  data.TotalFavorited,
+		WorkCount:       data.WorkCount,
+		FavoriteCount:   data.UserFavoriteCount,
+	}
+	return &publish.Video{
+		Id:            int64(data.VID),
+		Author:        author,
+		PlayUrl:       data.PlayURL,
+		CoverUrl:      data.CoverURL,
+		FavoriteCount: data.FavoriteCount,
+		CommentCount:  data.CommentCount,
+		IsFavorite:    data.IsFavorite,
+		Title:         data.Title,
+	}
+}
+
+func VideoDataList(dataList []*db.VideoData) []*publish.Video {
+	res := make([]*publish.Video, 0, len(dataList))
+	for i := 0; i < len(dataList); i++ {
+		res = append(res, VideoData(dataList[i]))
+	}
+	return res
+}

@@ -8,6 +8,12 @@ const (
 	TokenMaxRefresh = 3 * time.Hour
 )
 
+// 点赞限制相关
+const (
+	VideoLikeLimit     = 10
+	VideoLikeLimitTime = 60 * time.Second
+)
+
 // ActionType 的枚举
 // 1-发布评论，2-删除评论
 // 1-点赞，2-取消点赞
@@ -42,8 +48,7 @@ const (
 // 业务相关
 const (
 	MaxVideoNum = 30
-	MaxFileSize = 10 << 19 // 5MB
-
+	MaxFileSize = 3 * 1024 * 1024 // 3MB 另外 Hertz 默认的请求体大小是 4MB
 )
 
 // 微服务相关

@@ -22,7 +22,10 @@ func CommentAction(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinCommentActionRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 
@@ -57,7 +60,10 @@ func GetCommentList(ctx context.Context, c *app.RequestContext) {
 	var req api.DouyinCommentListRequest
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		c.JSON(consts.StatusOK, &api.DouyinResponse{
+			StatusCode: errno.UserRequestParameterError.ErrCode,
+			StatusMsg:  err.Error(),
+		})
 		return
 	}
 
